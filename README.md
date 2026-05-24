@@ -1,2 +1,2 @@
-# network-labs
-Network Engineering Lab Portfolio - OSPF, VLAN, DHCP
+# Network-Labs
+etwork Engineering Lab Portfolio - Switching, Routing, Security, Wireless
