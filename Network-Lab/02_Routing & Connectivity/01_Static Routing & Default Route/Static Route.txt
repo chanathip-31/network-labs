@@ -1,0 +1,94 @@
+Static Route
+✅ Routing Table
+✅ Next Hop
+✅ Path Selection
+✅ Packet Flow
+
+Topology
+
+PC1 --- SW1 --- R1 --- R2 --- SW2 --- PC2
+
+IP Plan
+LAN1
+192.168.10.0/24
+WAN Link
+10.0.0.0/30
+LAN2
+192.168.20.0/24
+
+Assign IP
+R1
+| Interface | IP              |
+| --------- | --------------- |
+| G0/0      | 192.168.10.1/24 |
+| G0/1      | 10.0.0.1/30     |
+
+R2
+| Interface | IP              |
+| --------- | --------------- |
+| G0/0      | 192.168.20.1/24 |
+| G0/1      | 10.0.0.2/30     |
+
+PC1
+IP: 192.168.10.10
+GW: 192.168.10.1
+PC2
+IP: 192.168.20.10
+GW: 192.168.20.1
+
+>> STEP 1 — Config R1
+conf t
+
+interface g0/0
+ip address 192.168.10.1 255.255.255.0
+no shutdown
+
+interface g0/1
+ip address 10.0.0.1 255.255.255.252
+no shutdown
+
+>> STEP 2 — Config R2
+conf t
+
+interface g0/0
+ip address 192.168.20.1 255.255.255.0
+no shutdown
+
+interface g0/1
+ip address 10.0.0.2 255.255.255.252
+no shutdown
+
+>> STEP 3 — Test ก่อนใส่ Route
+ping 10.0.0.2 > ควรผ่าน
+
+>> STEP 4 — ใส่ Static Route
+บน R1
+ip route 192.168.20.0 255.255.255.0 10.0.0.2
+แปลว่า
+ถ้าจะไป 192.168.20.0
+ให้ส่งไป 10.0.0.2
+บน R2
+ip route 192.168.10.0 255.255.255.0 10.0.0.1
+
+>> STEP 5 — Test
+ping 192.168.20.10 > ควรผ่าน
+
+คำสั่งสำคัญมาก
+ดู Routing Table
+show ip route
+สิ่งที่ควรเห็น
+C = Connected
+S = Static
+ตัวอย่าง
+S 192.168.20.0/24 [1/0] via 10.0.0.2
+
+| ส่วน          | ความหมาย     |
+| ------------ | ------------ |
+| S            | Static Route |
+| 192.168.20.0 | Destination  |
+| via 10.0.0.2 | Next Hop     |
+
+
+
+
+

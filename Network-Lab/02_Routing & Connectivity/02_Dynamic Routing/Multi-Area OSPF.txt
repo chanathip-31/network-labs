@@ -1,0 +1,139 @@
+Multi-Area OSPF
+Design
+LAN-A --- R1 --- R2 ===== R3 --- R4 --- LAN-B
+            |               |
+         Area 10         Area 20
+               \         /
+                \       /
+                 Area 0
+
+Router Role
+| Router | Role                    |
+| ------ | ----------------------- |
+| R1     | Internal Router Area 10 |
+| R2     | ABR                     |
+| R3     | ABR                     |
+| R4     | Internal Router Area 20 |
+
+OSPF Area Mapping
+| Link    | Area    |
+| ------- | ------- |
+| R1 ↔ R2 | Area 10 |
+| R2 ↔ R3 | Area 0  |
+| R3 ↔ R4 | Area 20 |
+
+IP Plan
+LAN-A
+| Device  | IP               |
+| ------- | ---------------- |
+| PC1     | 192.168.10.10/24 |
+| R1 G0/0 | 192.168.10.1/24  |
+
+R1-R2
+| Interface | IP           |
+| --------- | ------------ |
+| R1 G0/1   | 10.0.12.1/30 |
+| R2 G0/0   | 10.0.12.2/30 |
+
+R2-R3
+| Interface | IP           |
+| --------- | ------------ |
+| R2 G0/1   | 10.0.23.1/30 |
+| R3 G0/0   | 10.0.23.2/30 |
+
+R3-R4
+| Interface | IP           |
+| --------- | ------------ |
+| R3 G0/1   | 10.0.34.1/30 |
+| R4 G0/0   | 10.0.34.2/30 |
+
+LAN-B
+| Device  | IP               |
+| ------- | ---------------- |
+| PC2     | 192.168.20.10/24 |
+| R4 G0/1 | 192.168.20.1/24  |
+
+>> STEP 1 — Config PC
+PC1
+IP: 192.168.10.10
+Mask: 255.255.255.0
+GW: 192.168.10.1
+PC2
+IP: 192.168.20.10
+Mask: 255.255.255.0
+GW: 192.168.20.1
+
+>> STEP 2 — Config Interface ทุก Router
+R1
+conf t
+interface g0/0
+ip address 192.168.10.1 255.255.255.0
+no shutdown
+interface g0/1
+ip address 10.0.12.1 255.255.255.252
+no shutdown
+R2
+conf t
+interface g0/0
+ip address 10.0.12.2 255.255.255.252
+no shutdown
+interface g0/1
+ip address 10.0.23.1 255.255.255.252
+no shutdown
+R3
+conf t
+interface g0/0
+ip address 10.0.23.2 255.255.255.252
+no shutdown
+interface g0/1
+ip address 10.0.34.1 255.255.255.252
+no shutdown
+R4
+conf t
+interface g0/0
+ip address 10.0.34.2 255.255.255.252
+no shutdown
+interface g0/1
+ip address 192.168.20.1 255.255.255.0
+no shutdown
+
+>> STEP 3 — Config OSPF
+R1 (Area 10)
+router ospf 1
+network 192.168.10.0 0.0.0.255 area 10
+network 10.0.12.0 0.0.0.3 area 10
+R2 (ABR)
+router ospf 1
+network 10.0.12.0 0.0.0.3 area 10
+network 10.0.23.0 0.0.0.3 area 0
+R3 (ABR)
+router ospf 1
+network 10.0.23.0 0.0.0.3 area 0
+network 10.0.34.0 0.0.0.3 area 20
+R4 (Area 20)
+router ospf 1
+network 10.0.34.0 0.0.0.3 area 20
+network 192.168.20.0 0.0.0.255 area 20
+
+>> STEP 4 — ดู Routing Table
+show ip route > ควรเห็น เช่น O IA 192.168.20.0
+O IA คืออะไร 
+| Symbol | Meaning    |
+| ------ | ---------- |
+| O      | OSPF       |
+| IA     | Inter-Area |
+
+STEP 5 — Test
+PC1
+ping 192.168.20.10 > ควรผ่าน
+
+Packet วิ่งยังไง
+Area10
+ ↓
+R2 (ABR)
+ ↓
+Area0
+ ↓
+R3 (ABR)
+ ↓
+Area20

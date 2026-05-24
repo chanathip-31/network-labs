@@ -1,0 +1,177 @@
+Wireless LAN Controller (WLC)
+✅ ใช้ WLC ควบคุม AP
+✅ มี 2 SSID
+✅ STAFF-WIFI
+✅ GUEST-WIFI
+✅ แยก VLAN
+✅ Client ได้ IP คนละวง
+✅ เข้าใจ Enterprise Wireless Flow
+
+TOPOLOGY
+
+                           +------------------+
+                           |   CORE-L3-SW     |
+                           |      3560        |
+                           | DHCP + Routing   |
+                           +------------------+
+                                   |
+                                Gi0/1
+                                 TRUNK
+                                   |
+                            Gi0/1
+                       +------------------+
+                       |    ACCESS-SW     |
+                       |       2960       |
+                       +------------------+
+                         |             |
+                         |             |
+                      Fa0/1         Fa0/24
+                    ACCESS99      ACCESS99
+                         |             |
+                        AP            WLC
+                      )))  )))
+                  STAFF   GUEST
+
+               Laptop1   Laptop2
+			   
+Enterprise Concept
+| SSID       | VLAN   | Network         |
+| ---------- | ------ | --------------- |
+| STAFF-WIFI | VLAN10 | 192.168.10.0/24 |
+| GUEST-WIFI | VLAN20 | 192.168.20.0/24 |
+| MANAGEMENT | VLAN99 | 192.168.99.0/24 |
+
+>> STEP 1 — Configure CORE-L3-SW (3560)
+Enable Routing
+enable
+conf t
+ip routing
+Create VLANs
+vlan 10
+name STAFF
+vlan 20
+name GUEST
+vlan 99
+name MGMT
+Create SVI VLAN10, VLAN20, VLAN99
+interface vlan 10
+ip address 192.168.10.1 255.255.255.0
+no shutdown
+interface vlan 20
+ip address 192.168.20.1 255.255.255.0
+no shutdown
+interface vlan 99
+ip address 192.168.99.1 255.255.255.0
+no shutdown
+Configure Trunk
+interface gi0/1
+switchport trunk encapsulation dot1q
+switchport mode trunk
+
+>> STEP 2 — Configure DHCP
+Excluded Address
+ip dhcp excluded-address 192.168.10.1 192.168.10.20
+ip dhcp excluded-address 192.168.20.1 192.168.20.20
+ip dhcp excluded-address 192.168.99.1 192.168.99.20
+STAFF DHCP
+ip dhcp pool STAFF
+network 192.168.10.0 255.255.255.0
+default-router 192.168.10.1
+dns-server 8.8.8.8
+GUEST DHCP
+ip dhcp pool GUEST
+network 192.168.20.0 255.255.255.0
+default-router 192.168.20.1
+dns-server 8.8.8.8
+MGMT DHCP
+ip dhcp pool MGMT
+network 192.168.99.0 255.255.255.0
+default-router 192.168.99.1
+dns-server 8.8.8.8
+
+>> STEP 3 — Configure ACCESS SWITCH (2960)
+Create VLANs
+enable
+conf t
+vlan 10
+vlan 20
+vlan 99
+Configure Trunk to CORE
+interface gi0/1
+switchport mode trunk
+Configure AP Port
+interface F0/1
+switchport mode trunk
+switchport trunk native vlan 99
+spanning-tree portfast
+Configure WLC Port
+interface F0/24
+switchport mode trunk
+switchport trunk native vlan 99
+spanning-tree portfast
+
+>> STEP 4 — Configure WLC
+Config → Management 
+| Field      | Value         |
+| ---------- | ------------- |
+| IP Address | 192.168.99.10 |
+| Mask       | 255.255.255.0 |
+| Gateway    | 192.168.99.1  |
+
+>> STEP 5 — Create WLAN 1
+STAFF-WIFI
+| Field   | Value      |
+| ------- | ---------- |
+| SSID    | STAFF-WIFI |
+| WLAN ID | 1          |
+| VLAN    | 10         |
+
+Security
+| Field    | Value    |
+| -------- | -------- |
+| WPA2     | Enable   |
+| Password | Staff123 |
+
+>> STEP 6 — Create WLAN 2
+GUEST-WIFI
+| Field   | Value      |
+| ------- | ---------- |
+| SSID    | GUEST-WIFI |
+| WLAN ID | 2          |
+| VLAN    | 20         |
+
+Security
+| Field    | Value    |
+| -------- | -------- |
+| WPA2     | Enable   |
+| Password | Guest123 |
+
+>> STEP 8 — Configure Laptop1, Laptop2
+Connect
+| Field    | Value      |
+| -------- | ---------- |
+| SSID     | STAFF-WIFI |
+| Password | Staff123   |
+
+Connect
+| Field    | Value      |
+| -------- | ---------- |
+| SSID     | GUEST-WIFI |
+| Password | Guest123   |
+
+DHCP
+Laptop1, Laptop2
+Desktop
+→ IP Configuration
+→ DHCP
+ควรได้ 192.168.10.x
+
+>> STEP 10 — TEST
+Laptop1
+ping 192.168.10.1
+Laptop2
+ping 192.168.20.1
+
+VERIFY COMMANDS
+CORE
+show ip dhcp binding

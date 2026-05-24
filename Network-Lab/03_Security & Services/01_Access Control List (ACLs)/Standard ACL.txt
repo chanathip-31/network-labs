@@ -1,0 +1,119 @@
+Standard ACL
+Enterprise Topology
+
+
+                    SERVER NETWORK
+                     10.10.10.0/24
+
+                 +-------------------+
+                 |       SW2         |
+                 |    SERVER-SW      |
+                 +-------------------+
+                    |             |
+                    |             |
+          10.10.10.10      10.10.10.20
+            SERVER1          DHCP-SERVER
+
+
+
+                          G0/1
+                    10.10.10.1/24
+                     +---------+
+                     |   R1    |
+                     | ACL RTR |
+                     +---------+
+                   192.168.10.1/24
+                          G0/0
+
+
+                 +-------------------+
+                 |       SW1         |
+                 |     USER-SW       |
+                 +-------------------+
+                  |       |       |
+                  |       |       |
+          192.168.10.10   |   192.168.10.30
+             IT-PC1       |      HR-PC1
+                          |
+                    192.168.10.20
+                        IT-PC2
+
+                               \
+                                \
+                           192.168.10.40
+                               HR-PC2
+							 
+| Source | Destination    | Result  |
+| ------ | -------------- | ------- |
+| IT-PCs | Server Network | ✅ Allow |
+| HR-PCs | Server Network | ❌ Block |
+
+>> STEP 1 — Config Router
+R1
+enable
+conf t
+interface g0/0
+ip address 192.168.10.1 255.255.255.0
+no shutdown
+interface g0/1
+ip address 10.10.10.1 255.255.255.0
+no shutdown
+
+>> STEP 2 — Config PCs and SERVER
+PC
+| Device | IP            | Gateway      |
+| ------ | ------------- | ------------ |
+| IT-PC1 | 192.168.10.10 | 192.168.10.1 |
+| IT-PC2 | 192.168.10.20 | 192.168.10.1 |
+| HR-PC1 | 192.168.10.30 | 192.168.10.1 |
+| HR-PC2 | 192.168.10.40 | 192.168.10.1 |
+SERVER
+| Device      | IP          | Gateway    |
+| ----------- | ----------- | ---------- |
+| SERVER1     | 10.10.10.10 | 10.10.10.1 |
+| DHCP-SERVER | 10.10.10.20 | 10.10.10.1 |
+
+STEP 4 — Test Connectivity ก่อน
+จากทุก PC
+ping 10.10.10.10 and ping 10.10.10.20 > ควรผ่านทั้งหมด เพราะ Router กำลัง Route ปกติ
+
+>> STEP 5 — Create Standard ACL
+Block HR Department
+ACL Config
+access-list 1 deny host 192.168.10.30
+access-list 1 deny host 192.168.10.40
+access-list 1 permit any
+อธิบาย
+| Command    | Meaning        |
+| ---------- | -------------- |
+| deny host  | Block เครื่อง  	  |
+| permit any | Allow ที่เหลือ    |
+
+>> STEP 6 — Apply ACL
+Standard ACL Rule วางใกล้ Destination
+ดังนั้น Apply ที่ G0/1 outbound
+Config
+interface g0/1
+ip access-group 1 out
+
+Traffic Flow
+HR-PC
+ ↓
+SW1
+ ↓
+R1
+ ↓
+ACL CHECK
+ ↓
+SERVER NETWORK
+
+>> STEP 7 — Testing
+HR-PC1 ping 10.10.10.10 ❌ ไม่ผ่าน
+HR-PC2 ping 10.10.10.10 ❌ ไม่ผ่าน
+IT-PC1 ping 10.10.10.10 ✅ ผ่าน
+IT-PC2 ping 10.10.10.10 ✅ ผ่าน
+
+>> STEP 8 — Verify ACL ดู ACL Hit Count
+show access-lists
+deny host 192.168.10.30 (5 matches)
+deny host 192.168.10.40 (3 matches)

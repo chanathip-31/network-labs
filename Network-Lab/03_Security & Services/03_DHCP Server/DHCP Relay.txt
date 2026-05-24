@@ -1,0 +1,149 @@
+DHCP Relay
+✅ PC อยู่ VLAN10
+✅ DHCP Server อยู่ VLAN20
+✅ PC รับ DHCP ข้าม VLAN ได้
+✅ ใช้ Core Switch เป็น DHCP Relay
+
+Topology
+
+                    VLAN10 USER
+               192.168.10.0/24
+
+                    PC1   PC2
+                      \   /
+                    +--------+
+                    | 2960   |
+                    | ACCESS |
+                    +--------+
+                         |
+                       Gi0/1
+                      TRUNK
+                         |
+                       Gi0/1
+                 +----------------+
+                 | CORE-L3-SW     |
+                 |      3560      |
+                 +----------------+
+                  |             |
+          VLAN10 SVI      VLAN20 SVI
+          192.168.10.1    192.168.20.1
+           (HELPER)
+                                |
+                             Fa0/24
+                                |
+                           +---------+
+                           | DHCP-SRV|
+                           +---------+
+                           192.168.20.10
+						   
+VLAN Design
+| VLAN   | Purpose | Network         |
+| ------ | ------- | --------------- |
+| VLAN10 | USER    | 192.168.10.0/24 |
+| VLAN20 | SERVER  | 192.168.20.0/24 |
+
+DHCP Discover เป็น Broadcast
+User อยู่ VLAN10 แต่ DHCP Server อยู่ VLAN20 Router/L3 Device ไม่ส่ง Broadcast ข้าม VLAN
+ดังนั้นต้องใช้ DHCP Relay > ip helper-address
+
+>> STEP 1 — Configure CORE-L3-SW (3560)
+Enable Routing
+enable
+conf t
+ip routing
+
+Create VLANs
+vlan 10
+name USER
+vlan 20
+name SERVER
+
+Create SVI VLAN10
+interface vlan 10
+ip address 192.168.10.1 255.255.255.0
+ip helper-address 192.168.20.10
+no shutdown
+สำคัญมาก 🔥
+ip helper-address 192.168.20.10 > คือ DHCP Relay
+
+Create SVI VLAN20
+interface vlan 20
+ip address 192.168.20.1 255.255.255.0
+no shutdown
+
+Configure Trunk Port ไป 2960
+interface gi0/1
+switchport trunk encapsulation dot1q
+switchport mode trunk
+
+Configure DHCP Server Port
+interface fa0/24
+switchport mode access
+switchport access vlan 20
+spanning-tree portfast
+
+>> STEP 2 — Configure ACCESS SWITCH (2960)
+Create VLAN10
+enable
+conf t
+vlan 10
+name USER
+
+Configure Trunk
+interface gi0/1
+switchport mode trunk
+
+Configure Access Ports
+interface range fa0/1 - 2
+switchport mode access
+switchport access vlan 10
+spanning-tree portfast
+
+>> STEP 3 — Configure DHCP SERVER
+DHCP Server
+Desktop → IP Configuration
+| Field           | Value         |
+| --------------- | ------------- |
+| IP Address      | 192.168.20.10 |
+| Subnet Mask     | 255.255.255.0 |
+| Default Gateway | 192.168.20.1  |
+
+เปิด DHCP Service
+Services
+→ DHCP
+→ ON
+Create DHCP Pool
+| Field           | Value          |
+| --------------- | -------------- |
+| Pool Name       | VLAN10         |
+| Default Gateway | 192.168.10.1   |
+| DNS Server      | 8.8.8.8        |
+| Start IP        | 192.168.10.100 |
+| Subnet Mask     | 255.255.255.0  |
+| Maximum Users   | 100            |
+กด Add
+
+>> STEP 4 — Configure PCs
+บน PC1 และ PC2:
+Desktop
+→ IP Configuration
+→ DHCP
+สิ่งที่ควรได้
+| Device | IP             |
+| ------ | -------------- |
+| PC1    | 192.168.10.100 |
+| PC2    | 192.168.10.101 |
+
+สำคัญมาก 👍
+ม้ DHCP Server จะอยู่ 192.168.20.10 แต่ยังแจก 192.168.10.x ได้ เพราะ DHCP Relay ช่วย Forward Request
+
+>> STEP 5 — TEST
+Ping Gateway จาก PC1 และ PC2
+ping 192.168.10.1
+Ping DHCP Server
+ping 192.168.20.10
+PC1 → PC2
+ping 192.168.10.101
+ทุกอย่างควรผ่าน ✅
+
+

@@ -1,0 +1,36 @@
+LAB Network SI By Cisco Packet Tracer
+1. Foundation Switching
+	- VLAN And TRUNK
+		LAB_VLAN_and_TRUNK
+	- Spanning Tree Protocol (STP)
+		LAB_STP-Spanning Tree Protocol
+		LAB_Rapid Spanning Tree Protocol
+		LAB_PortFast And BPDU Guard
+	- EtherChannel
+		LAB_EtherChannel PAgP
+		LAB_EtherChannel LACP
+2. Routing & Connectivity	
+	- Static Routing & Default Route
+		LAB_Static Route
+		LAB_Default Route
+	- Dynamic Routing
+		LAB_Single Area OSPF
+		LAB_Multi-Area OSPF
+	- Inter-VLAN Routing
+		LAB_Router-on-a-Stick (ROAS)
+		LAB_Switched Virtual Interface (SVI)
+3. Security & Services
+	- Access Control List (ACLs)
+		LAB_Standard ACL
+		LAB_Extended ACL
+	- Network Address Translation (NAT)
+		LAB_Static NAT
+		LAB_PAT Overload
+	- DHCP Server
+		LAB_Router DHCP
+		LAB_Core L3 Switch DHCP
+		LAB_DHCP Relay
+4. Wireless Infrastructure
+	- Wireless (APs & WLC)
+		LAB_Wireless Access Point
+		LAB_Wireless LAN Controller

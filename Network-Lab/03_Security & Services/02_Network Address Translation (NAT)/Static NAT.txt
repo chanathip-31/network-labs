@@ -1,0 +1,87 @@
+Static NAT (1:1 Translation)
+Topology
+
+[ Internal Network ]         [ WAN Link ]              [ Public Internet ]
+
+  HQ-SERVER                                                PUBLIC-SERVER
+  192.168.1.10                                              8.8.8.8
+       |                                                         |
+     [SW1]                                                     [SW2]
+       |                                                         |
+Gi0/0  |                                                     Gi0/0 |
+ +-----------+  Gi0/1                         Gi0/1  +-----------+
+ |  HQ-RTR   |---------------------------------------|  ISP-RTR  |
+ +-----------+ 10.0.0.1/30         10.0.0.2/30      +-----------+
+ 
+ 
+NAT Design
+Internal Server
+192.168.1.10 จะถูก Publish เป็น 100.100.100.10
+Public Network จะเรียก 100.100.100.10 เพื่อเข้าถึง HQ-SERVER
+
+>> STEP 1 — Config HQ-SERVER
+IP: 192.168.1.10
+MASK: 255.255.255.0
+GW: 192.168.1.1
+
+>> STEP 2 — Config PUBLIC-SERVER
+IP: 8.8.8.8
+MASK: 255.255.255.0
+GW: 8.8.8.1
+
+>> STEP 3 — Config HQ-RTR
+conf t
+interface g0/0
+ip address 192.168.1.1 255.255.255.0
+ip nat inside
+no shutdown
+interface g0/1
+ip address 10.0.0.1 255.255.255.252
+ip nat outside
+no shutdown
+
+>> STEP 4 — Config ISP-RTR
+conf t
+interface g0/0
+ip address 8.8.8.1 255.255.255.0
+no shutdown
+interface g0/1
+ip address 10.0.0.2 255.255.255.252
+no shutdown
+
+>> STEP 5 — Config Routing
+บน HQ-RTR
+Default Route ไป ISP
+ip route 0.0.0.0 0.0.0.0 10.0.0.2
+
+บน ISP-RTR
+Route กลับ NAT IP
+ip route 100.100.100.0 255.255.255.0 10.0.0.1
+อธิบายสำคัญ
+ISP ต้องรู้ว่า 100.100.100.10 อยู่หลัง HQ-RTR
+
+>> STEP 6 — Config Static NAT
+บน HQ-RTR
+ip nat inside source static 192.168.1.10 100.100.100.10
+แปลว่า 192.168.1.10 ↔ 100.100.100.10
+
+>> STEP 7 — Test Connectivity
+จาก PUBLIC-SERVER
+ping 100.100.100.10 
+
+Packet Flow จริง
+- PUBLIC-SERVER ส่งหา 100.100.100.10
+- ISP-RTR รู้ Route ส่งไป HQ-RTR
+- HQ-RTR ดู NAT Table:
+	100.100.100.10
+	↓
+	192.168.1.10
+HQ-SERVER ตอบกลับ HQ-RTR แปลกลับเป็น 100.100.100.10
+
+สิ่งที่ควรตรวจสอบ
+ดู NAT Translation
+show ip nat translations
+ดู NAT Statistics
+show ip nat statistics
+ดู Routing
+show ip route

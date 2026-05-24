@@ -1,0 +1,122 @@
+Spanning Tree Protocol
+STP จะกำหนด “Role” ให้แต่ละ Port
+| Role | หน้าที่              		|
+| ---- | -------------------- 	|
+| Root | ทางไปหา Root Bridge  	|
+| Desg | Port หลักของ Segment 	|
+| Altn | เส้นสำรอง            	|
+
+จำง่ายแบบสั้นที่สุด
+| ค่า       | จำว่า               	|
+| -------- | ---------------	|
+| Root FWD | ทางไป Root          |
+| Desg FWD | ทางหลักที่เปิดใช้งาน 		|
+| Altn BLK | ทางสำรองที่ถูกปิด    	|
+	
+
+
+Lab Root Bridge Priority
+- หา Root Bridge
+- เปลี่ยน Root Bridge ด้วย Priority
+
+Topology
+
+        SW1
+       /   \
+      /     \
+    SW2-----SW3
+	
+>> STEP 1 — สร้าง Topology ใน Cisco Packet Tracer
+Switch 2960 จำนวน 3 ตัว
+| Device | Port  | Device | Port  |
+| ------ | ----- | ------ | ----- |
+| SW1    | Fa0/1 | SW2    | Fa0/1 |
+| SW1    | Fa0/2 | SW3    | Fa0/1 |
+| SW2    | Fa0/2 | SW3    | Fa0/2 |
+
+>> STEP 2 — รอ STP ทำงาน
+ตอนแรกจะเห็นไฟ Port:
+สีส้ม -> สีเขียว
+เพราะ STP กำลังเลือกเส้นทาง
+
+>> STEP 3 — ดูว่าใครเป็น Root Bridge
+เข้า CLI ของแต่ละ Switch
+พิมพ์:
+show spanning-tree  >> ถ้า Switch นั้นเป็น Root จะเห็น: This bridge is the root
+STP เลือก Root ยังไง
+1. Priority ต่ำสุด
+2. ถ้าเท่ากัน → ดู MAC Address ต่ำสุด
+ค่า Default Cisco ทุกตัวเริ่มต้น: 32768 >> ใคร MAC ต่ำสุด ชนะ
+
+>> STEP 4 — บังคับให้ SW1 เป็น Root
+เข้า CLI
+enable
+conf t
+ตั้ง Priority
+spanning-tree vlan 1 priority 4096 >> ทำไมใช้ 4096 เพราะ: 4096 < 32768 จึงชนะทันที
+
+>> STEP 5 — ตรวจสอบ
+เข้า CLI SW1:
+show spanning-tree >> จะเห็น: This bridge is the root
+
+>> STEP 6 — ดูผลที่ Switch อื่นบน SW2/SW3
+เข้า CLI:
+show spanning-tree
+จะเห็น:
+Root ID
+Priority 4097
+Address xxxx.xxxx.xxxx
+หมายถึง: SW1 คือ Root Bridge
+
+>> STEP 7 — ดู Port Blocking
+ตอนนี้มี Loop: SW1-SW2-SW3
+STP จะ Block 1 Port
+ดูด้วย CLI: show spanning-tree มองหา >> Altn BLK/Blocking
+อธิบายการทำงาน
+STP จะสร้าง: Logical Tree เหลือเส้นทางเดียว เพื่อกัน Broadcast Loop
+
+>> STEP 8 — ทดลองเปลี่ยน Root
+ลองทำ SW2 เป็น Root แทน
+CLI SW2:
+conf t
+spanning-tree vlan 1 priority 0  >> ทำไมใช้ 0? เพราะ 0 ต่ำสุดจึงชนะทุกตัว
+ตรวจสอบอีกครั้ง CLI: show spanning-tree >> จะเห็น: This bridge is the root บน SW2
+
+>> วิธีที่ SI ใช้จริง
+Core หลัก
+CLI: spanning-tree vlan 1 root primary
+Core สำรอง
+CLI: spanning-tree vlan 1 root secondary
+Cisco จะคำนวณ Priority ให้อัตโนมัติ
+
+สรุปแนวคิดสำคัญ
+| เรื่อง           	| ความหมาย            	|
+| ---------------- 	| -------------------	|
+| Root Bridge      	| ตัวกลางของ STP      	|
+| Priority ต่ำกว่า 	| ชนะ                	|
+| Default          	| 32768               	|
+| SI ต้องกำหนดเอง  	| เพื่อควบคุม Traffic 		|
+| STP Block Port   	| ป้องกัน Loop        	|
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,90 @@
+Switched Virtual Interface (SVI)
+Virtual Interface ของ VLAN
+
+Core จะเป็น Gateway ทุก VLAN
+เช่น:
+| VLAN | Gateway      |
+| ---- | ------------ |
+| 10   | 192.168.10.1 |
+| 20   | 192.168.20.1 |
+
+Topology
+
+          CORE-L3
+          /     \
+         /       \
+     ACCESS1   ACCESS2
+	 
+VLAN Design
+| VLAN | Name | Network         |
+| ---- | ---- | --------------- |
+| 10   | HR   | 192.168.10.0/24 |
+| 20   | IT   | 192.168.20.0/24 |
+
+>> STEP 1 — สร้าง VLAN บน ACCESS
+ACCESS1
+conf t
+vlan 10
+name HR
+ACCESS2
+conf t
+vlan 20
+name IT
+
+>> STEP 2 — Assign Port ให้ PC
+ACCESS1
+interface fa0/1
+switchport mode access
+switchport access vlan 10
+ACCESS2
+interface fa0/1
+switchport mode access
+switchport access vlan 20
+
+>> STEP 3 — ตั้ง Trunk ไป CORE
+ACCESS1
+interface fa0/24
+switchport mode trunk
+ACCESS2
+interface fa0/24
+switchport mode trunk
+
+>> STEP 4 — Config CORE L3
+สร้าง VLAN
+conf t
+vlan 10
+vlan 20
+
+>> STEP 5 — ตั้ง Trunk บน CORE
+interface range g0/1 - 2
+switchport trunk encapsulation dot1q
+switchport mode trunk
+
+>> STEP 6 — สร้าง SVI
+VLAN10 Gateway
+interface vlan 10
+ip address 192.168.10.1 255.255.255.0
+no shutdown
+VLAN20 Gateway
+interface vlan 20
+ip address 192.168.20.1 255.255.255.0
+no shutdown
+
+>> STEP 7 — เปิด Routing
+ip routing
+
+>> STEP 8 — ตั้ง IP PC
+PC1
+IP: 192.168.10.10
+GW: 192.168.10.1
+PC2
+IP: 192.168.20.10
+GW: 192.168.20.1
+
+>> STEP 9 — Test
+ping 192.168.20.10 > ควรผ่าน
+
+ทำไมต้อง Trunk
+พราะ Uplink ต้องส่ง VLAN ไป CORE
+
+

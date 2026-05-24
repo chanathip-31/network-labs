@@ -1,0 +1,142 @@
+Wireless Access Point
+✅ ฝึกใช้งาน Wireless AP
+✅ ฝึก DHCP ผ่าน Wi-Fi
+✅ ฝึก VLAN จริง
+✅ มี L2 Switch
+✅ มี Core L3 Switch
+✅ แยก Network แบบองค์กร
+
+Enterprise Design
+
+                        +------------------+
+                        |   CORE-L3-SW     |
+                        |      3560        |
+                        | DHCP + Routing   |
+                        +------------------+
+                                  |
+                               TRUNK
+                                  |
+                             Gi0/1
+                        +------------------+
+                        |    ACCESS-SW     |
+                        |       2960       |
+                        +------------------+
+                           |            |
+                           |            |
+                    ACCESS VLAN10   ACCESS VLAN20
+                           |            |
+                        +------+     +--------+
+                        | AP1  |     | SERVER |
+                        +------+
+                           )))
+                        Laptop
+						
+VLAN Design
+| VLAN   | Purpose        | Network         |
+| ------ | -------------- | --------------- |
+| VLAN10 | Wireless Users | 192.168.10.0/24 |
+| VLAN20 | Server         | 192.168.20.0/24 |
+
+IP Addressing
+| Device         | IP            |
+| -------------- | ------------- |
+| VLAN10 Gateway | 192.168.10.1  |
+| VLAN20 Gateway | 192.168.20.1  |
+| AP1            | 192.168.10.2  |
+| SERVER         | 192.168.20.10 |
+
+>> STEP 1 — Configure CORE-L3-SW (3560)
+enable
+conf t
+ip routing
+
+Create VLANs
+vlan 10
+name WIRELESS
+vlan 20
+name SERVER
+
+Create SVI VLAN10, VLAN20
+interface vlan 10
+ip address 192.168.10.1 255.255.255.0
+no shutdown
+interface vlan 20
+ip address 192.168.20.1 255.255.255.0
+no shutdown
+
+Configure Trunk to 2960
+interface gi0/1
+switchport trunk encapsulation dot1q
+switchport mode trunk
+
+>> STEP 2 — Configure ACCESS-SW (2960)
+Create VLANs
+enable
+conf t
+vlan 10
+name WIRELESS
+vlan 20
+name SERVER
+
+Configure Trunk to CORE
+interface gi0/1
+switchport mode trunk
+
+Configure AP Port
+interface fa0/1
+switchport mode access
+switchport access vlan 10
+spanning-tree portfast
+
+Configure SERVER Port
+interface fa0/24
+switchport mode access
+switchport access vlan 20
+spanning-tree portfast
+
+>> STEP 3 — Configure DHCP on CORE
+Excluded Address
+ip dhcp excluded-address 192.168.10.1 192.168.10.20
+ip dhcp excluded-address 192.168.20.1 192.168.20.20
+
+DHCP VLAN10, VLAN20
+ip dhcp pool WIRELESS
+network 192.168.10.0 255.255.255.0
+default-router 192.168.10.1
+dns-server 8.8.8.8
+ip dhcp pool SERVER
+network 192.168.20.0 255.255.255.0
+default-router 192.168.20.1
+dns-server 8.8.8.8
+
+>> STEP 4 — Configure AP1
+Config → Port1
+| Field          | Value      |
+| -------------- | ---------- |
+| SSID           | STAFF-WIFI |
+| Authentication | WPA2-PSK   |
+| Password       | Staff123   |
+| Encryption     | AES        |
+
+>> STEP 5 — Configure SERVER
+| Field      | Value         |
+| ---------- | ------------- |
+| IP Address | 192.168.20.10 |
+| Mask       | 255.255.255.0 |
+| Gateway    | 192.168.20.1  |
+
+>> STEP 6 — Configure Laptop
+Desktop → PC Wireless > Connect Wi-Fi
+| Field    | Value      |
+| -------- | ---------- |
+| SSID     | STAFF-WIFI |
+| Password | Staff123   |
+
+>> STEP 7 — DHCP
+Desktop → IP Configuration >> Desktop → DHCP Laptop ควรได้ 192.168.10.x
+
+>> STEP 8 — TEST
+Ping Gateway ping 192.168.10.1
+Ping Server ping 192.168.20.10
+ดู DHCP Lease
+show ip dhcp binding

@@ -1,0 +1,51 @@
+EtherChannel PAgP
+
+| ฝั่ง A      | ฝั่ง B       | Result  |
+| --------- | --------- | ------   |
+| desirable | desirable | ✅      |
+| desirable | auto      | ✅      |
+| auto      | auto      | ❌      |
+
+Lab PAgP
+Topology
+
+      SW1
+      || 
+      || 
+      || 
+      SW2
+	  
+| SW1   | SW2   |
+| ----- | ----- |
+| Fa0/1 | Fa0/1 |
+| Fa0/2 | Fa0/2 |
+
+>> STEP 1 — ตั้ง Trunk
+SW1
+conf t
+interface range fa0/1 - 2
+switchport mode trunk
+SW2
+conf t
+interface range fa0/1 - 2
+switchport mode trunk
+
+>> STEP 2 — สร้าง PAgP
+SW1
+interface range fa0/1 - 2
+channel-group 1 mode desirable
+SW2
+interface range fa0/1 - 2
+channel-group 1 mode auto
+
+>> STEP 3 — ตั้ง Port-Channel
+SW1
+interface port-channel 1
+switchport mode trunk
+SW2
+interface port-channel 1
+switchport mode trunk
+
+>> ตรวจสอบ
+show etherchannel summary
+สิ่งที่ควรเห็น Po1(SU) Fa0/1(P) Fa0/2(P) 

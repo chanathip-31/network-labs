@@ -1,0 +1,96 @@
+Core L3 Switch DHCP
+✅ Core Switch แจก DHCP
+✅ 2960 เป็น Access Layer
+✅ VLAN10 ใช้งานได้
+✅ PC ได้ IP อัตโนมัติ
+
+Topology
+
+                 +------------------+
+                 |   CORE-L3-SW     |
+                 |      3560        |
+                 | DHCP + Gateway   |
+                 +------------------+
+                        Gi0/1
+                           |
+                           |
+                     TRUNK LINK
+                           |
+                        Gi0/1
+                 +------------------+
+                 |    ACCESS-SW     |
+                 |       2960       |
+                 +------------------+
+                    |            |
+                 Fa0/1        Fa0/2
+                    |            |
+                   PC1          PC2
+                  DHCP         DHCP
+				  
+VLAN Design		
+| VLAN   | Name | Network         |
+| ------ | ---- | --------------- |
+| VLAN10 | USER | 192.168.10.0/24 |
+
+Gateway
+| VLAN   | Gateway      |
+| ------ | ------------ |
+| VLAN10 | 192.168.10.1 |
+
+>> STEP 1 — Configure CORE-L3-SW (3560)
+- Enable Routing
+enable
+conf t
+ip routing
+- Create VLAN
+vlan 10
+name USER
+- Create SVI
+interface vlan 10
+ip address 192.168.10.1 255.255.255.0
+no shutdown
+- Configure Trunk Port เชื่อมไป Access Switch
+interface gi0/1
+switchport trunk encapsulation dot1q
+switchport mode trunk
+
+>> STEP 2 — Configure DHCP on CORE
+- Exclude Address
+ip dhcp excluded-address 192.168.10.1 192.168.10.20
+- Create DHCP Pool
+ip dhcp pool VLAN10-USER
+network 192.168.10.0 255.255.255.0
+default-router 192.168.10.1
+dns-server 8.8.8.8
+
+>> STEP 3 — Configure ACCESS-SW (2960)
+- Create VLAN
+enable
+conf t
+vlan 10
+name USER
+- Configure Trunk
+interface gi0/1
+switchport mode trunk
+- Configure Access Ports
+interface range fa0/1 - 2
+switchport mode access
+switchport access vlan 10
+spanning-tree portfast
+
+>> STEP 4 — Configure PCs
+Desktop PC1 and PC2
+→ IP Configuration
+→ DHCP
+
+>> STEP 5 — TEST
+Ping Gateway
+จาก PC1 และ PC2 ping 192.168.10.1 ควรผ่าน ✅
+PC1 → PC2
+ping 192.168.10.22 ควรผ่าน ✅
+
+>> STEP 6 — VERIFY
+- บน Core Switch:
+ดู DHCP Lease > show ip dhcp binding
+ดู DHCP Pool > show ip dhcp pool
+

@@ -1,0 +1,63 @@
+Lab EtherChannel LACP
+| Mode | Protocol          | Vendor      |
+| ---- | ----------------- | ----------- |
+| ON   | ไม่มี Protocol         | ทุกเจ้า     	  |
+| PAgP | Cisco Proprietary | Cisco       |
+| LACP | IEEE Standard     | Multivendor |
+
+Topology
+
+        SW1
+       ||  ||
+       ||  ||
+       ||  ||
+        SW2
+		
+>> STEP 1 — ตั้งค่า Trunk
+SW1
+conf t
+interface range fa0/1 - 2
+switchport mode trunk
+
+SW2
+conf t
+interface range fa0/1 - 2
+switchport mode trunk
+
+>> STEP 2 — สร้าง EtherChannel LACP
+SW1
+interface range fa0/1 - 2
+channel-group 1 mode active
+
+SW2
+interface range fa0/1 - 2
+channel-group 1 mode active
+
+>> STEP 3 — ตั้งค่า Port-Channel
+SW1
+interface port-channel 1
+switchport mode trunk
+
+SW2
+interface port-channel 1
+switchport mode trunk
+
+ตรวจสอบ EtherChannel
+show etherchannel summary
+สิ่งที่ควรเห็น >> Po1(SU) S = Layer 2, U = In Use,
+
+ตัวอย่าง Output
+Group  Port-channel  Protocol    Ports
+------+-------------+-----------+----------------
+
+1      Po1(SU)      LACP        Fa0/1(P) Fa0/2(P)
+
+ตอนนี้ STP จะเห็นยังไง
+Port-channel1  เป็น Logical Link เดียว
+
+สิ่งที่ต้องระวังมาก
+Port ทุกเส้นต้อง:
+✅ Speed เท่ากัน
+✅ Duplex เท่ากัน
+✅ VLAN เหมือนกัน
+✅ Trunk เหมือนกัน

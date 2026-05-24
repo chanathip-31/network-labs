@@ -1,0 +1,88 @@
+Router DHCP
+✅ Router แจก IP อัตโนมัติ
+✅ PC รับ IP ผ่าน DHCP
+✅ PC คุยกันได้
+✅ เข้าใจ DORA Process
+
+Topology
+
+                +----------------+
+                |      R1        |
+                | DHCP SERVER    |
+                +----------------+
+                       G0/0
+                 192.168.10.1
+                         |
+                    +---------+
+                    |  SW1    |
+                    +---------+
+                     |       |
+                     |       |
+                    PC1     PC2
+                   DHCP     DHCP
+				   
+USER NETWORK
+192.168.10.0/24
+Gateway
+| Device  | IP           |
+| ------- | ------------ |
+| R1 G0/0 | 192.168.10.1 |
+DHCP Pool
+192.168.10.21 - 192.168.10.254
+Reserve ไว้
+192.168.10.1 - 20
+>> STEP 1 — Configure Router Interface
+บน R1:
+enable
+conf t
+interface g0/0
+ip address 192.168.10.1 255.255.255.0
+no shutdown
+
+>> STEP 2 — Exclude IP Address
+กัน IP ที่ไม่ต้องการแจก
+ip dhcp excluded-address 192.168.10.1 192.168.10.20
+อธิบาย Router จะไม่แจก IP ช่วงนี้
+
+>> STEP 3 — Create DHCP Pool
+ip dhcp pool OFFICE-LAN
+network 192.168.10.0 255.255.255.0
+default-router 192.168.10.1
+dns-server 8.8.8.8
+อธิบาย : 
+| Command        | Meaning         |
+| -------------- | --------------- |
+| ip dhcp pool   | สร้าง DHCP Pool   |
+| network        | วงที่จะแจก         |
+| default-router | Gateway         |
+| dns-server     | DNS ให้ Client   |
+
+>> STEP 4 — Configure PCs
+PC1 และ PC2
+Desktop
+→ IP Configuration
+→ DHCP
+
+สิ่งที่ควรเกิด
+| Device | IP            |
+| ------ | ------------- |
+| PC1    | 192.168.10.21 |
+| PC2    | 192.168.10.22 |
+
+>> STEP 5 — TEST
+จาก PC1:
+ping 192.168.10.1 ควรผ่าน ✅
+PC1 → PC2
+ping 192.168.10.22 ควรผ่าน ✅
+
+>> STEP 6 — Verify DHCP
+บน Router:
+- ดู DHCP Lease
+show ip dhcp binding
+ควรเห็น 
+192.168.10.21
+192.168.10.22
+- ดู DHCP Pool
+show ip dhcp pool
+
+

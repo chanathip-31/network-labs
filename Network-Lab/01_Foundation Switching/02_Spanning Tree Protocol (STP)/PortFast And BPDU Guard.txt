@@ -1,0 +1,62 @@
+PortFast + BPDU Guard
+PortFast คืออะไร
+ปกติ STP/RSTP เวลาพอร์ตขึ้นจะผ่าน:
+	- Listening
+	- Learning
+	- Forwarding
+ใช้เวลานิดหน่อย
+PortFast จะ:
+	- ข้ามขั้นตอน
+	- Forwarding ทันที
+เหมาะกับ:
+	- PC, Printer, IP Phone
+ไม่ควรใช้กับ Switch ต่อ Switch
+
+BPDU Guard คืออะไร
+เจอ BPDU จาก Switch อื่น BPDU Guard จะ Shutdown Port ทันทีเพื่อป้องกัน Loop
+
+Topology Lab
+    
+		SW1
+       /   \
+      /     \
+    SW2-----SW3
+	
+เพิ่ม PC เข้า SW2 
+PC1 -> SW2 Fa0/10
+เป้าหมาย Lab
+	- เปิด PortFast
+	- เปิด BPDU Guard
+	- ทดลองเสียบ Switch ปลอม
+
+>> STEP 1 — ต่อ PC
+ลาก PC มา 1 ตัว ต่อเข้า SW2 Fa0/10
+
+>> STEP 2 — เปิด PortFast
+พิมพ์ CLI บน SW2:
+enable
+conf t
+interface fa0/10
+spanning-tree portfast
+ตรวจสอบ พิมพ์ CLI:
+show spanning-tree interface fa0/10 detail  >> จะเห็น PortFast enabled
+ตอนนี้ Fa0/10 เปิดเร็วทันที
+
+>> STEP 3 — เปิด BPDU Guard
+พิมพ์ CLI บน SW2:
+interface fa0/10
+spanning-tree bpduguard enable
+
+>> STEP 4 — ทดลองโจมตีระบบ
+เอา Switch ใหม่มาต่อ เพิ่ม SW4 SW4 Fa0/1 -> SW2 Fa0/10
+ผลที่เกิด
+BPDU Guard จะ Detect มี BPDU จาก SW4 >> %SPANTREE-2-BLOCK_BPDUGUARD
+
+>> STEP 5 — เปิด Port กลับ
+พิมพ์ CLI:
+conf t
+interface fa0/10
+shutdown
+no shutdown
+
+

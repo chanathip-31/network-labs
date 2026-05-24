@@ -1,0 +1,33 @@
+Module 1: Foundation Switching (L2)
+1. VLAN Segmentation: ออกแบบ VLAN สำหรับแผนกต่างๆ (เช่น Sales, Accounting, IT, Guest) ให้ชัดเจน
+2. Trunking (802.1Q): การตั้งค่า Trunk Port ระหว่าง Switch-to-Switch และ Switch-to-Router ให้ VLAN คุยกันข้ามตึกได้
+3. Spanning Tree Protocol (STP): 
+	ฝึกทำ Root Bridge Priority เพื่อเลือกตัวหลัก
+	ฝึกตั้งค่า PortFast และ BPDU Guard (สำคัญมาก: เพื่อความปลอดภัยที่ Port ของผู้ใช้งาน)
+4. EtherChannel (LACP): ทำ Load Balancing และ Redundancy ระหว่าง Switch เพื่อเพิ่ม Bandwidth
+
+Module 2: Routing & Connectivity (L3)
+1. Inter-VLAN Routing:
+	ใช้ Router-on-a-stick (Sub-interface)
+	ใช้ L3 Switch (SVI) (วิธีนี้เป็นที่นิยมที่สุดในองค์กร)
+2. Static Routing & Default Route: เข้าใจการเขียนเส้นทางให้ Router ออก Internet ได้ (0.0.0.0/0)
+3. Dynamic Routing (OSPF): ตั้งค่า Single Area OSPF ให้ Router ทุกตัวรู้จักกันโดยอัตโนมัติ (เป็นทักษะที่ SI ต้องมีถ้าต้องดูแล Network หลายสาขา)
+
+Module 3: Security & Services (The "SI" Special)
+1. NAT (Network Address Translation):
+	ทำ PAT (Port Address Translation) เพื่อให้เครื่องในวง LAN ออก Internet ได้ด้วย IP สาธารณะเดียว
+2. Access Control List (ACLs):
+	Extended ACL: ฝึกเขียนเงื่อนไขละเอียด เช่น "ห้าม VLAN Sales เข้าถึง Server บัญชี แต่ให้เข้า Internet ได้" (หัวข้อนี้คือ Bread & Butter ของ SI)
+3. DHCP Server & Relay:
+	ตั้งค่าให้ Router เป็น DHCP Server แจก IP ให้ทุก VLAN
+	ทำ DHCP Relay (ip helper-address) กรณี DHCP Server อยู่คนละ VLAN กับเครื่องลูกข่าย (SI ต้องเจองานนี้บ่อยเวลาวางระบบใหม่)
+4. Port Security: จำกัดจำนวน MAC Address ต่อหนึ่ง Port และตั้งค่าให้ Shutdown Port ทันทีหากมีคนพยายามเสียบสายแปลกปลอม
+
+Module 4: Wireless Infrastructure (WLAN)
+
+
+Module 5: SI Operational Simulation (Troubleshooting & Design)
+1. Hierarchy Design: ออกแบบ Topology ตามหลัก 3-Layer (Core -> Distribution -> Access) วาดลงบนกระดาษก่อน แล้วค่อยลงมือทำใน Packet Tracer
+2. Documentation Practice (ต้องทำทุกครั้ง):
+	ทำ IP Plan (Excel) ว่าใครใช้ IP อะไร
+	ทำ As-Built Document (สรุปว่า Config อะไรไว้ที่ไหนบ้าง)

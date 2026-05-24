@@ -1,0 +1,112 @@
+Extended ACL
+สามารถดูได้
+✅ Source
+✅ Destination
+✅ Protocol
+✅ Port
+นี่คือ ACL ที่ใช้จริงใน Enterprise เยอะมาก
+✅ Allow HTTP
+✅ Block Ping
+✅ Allow SSH
+✅ Block VLAN
+✅ Restrict Server Access
+
+Topology
+
+                    SERVER NETWORK
+                     10.10.10.0/24
+
+                 +-------------------+
+                 |       SW2         |
+                 +-------------------+
+                           |
+                    10.10.10.10
+                        SERVER
+
+
+
+                          G0/1
+                    10.10.10.1/24
+                     +---------+
+                     |   R1    |
+                     +---------+
+                   192.168.10.1/24
+                          G0/0
+
+
+                 +-------------------+
+                 |       SW1         |
+                 +-------------------+
+                  |               |
+                  |               |
+          192.168.10.10    192.168.10.30
+              IT-PC             HR-PC
+
+| Device | Service     | Result   |
+| ------ | ----------- | ------   |
+| HR-PC  | Ping Server | ❌      |
+| HR-PC  | HTTP Server | ❌      |
+| IT-PC  | Ping Server | ✅      |
+| IT-PC  | HTTP Server | ✅      |
+  
+>> STEP 1 — Config Router
+conf t
+interface g0/0
+ip address 192.168.10.1 255.255.255.0
+no shutdown
+interface g0/1
+ip address 10.10.10.1 255.255.255.0
+no shutdown
+
+>> STEP 2 — Config PCs & Server
+ตั้ง IP ตาม Topology
+
+>> STEP 3 — Test Routing ก่อน
+จากทั้งสอง PC ping 10.10.10.10 ควรผ่าน
+
+>> STEP 4 — Create Extended ACL
+Requirement
+Block HR-PC ไปหา Server
+ACL Config
+access-list 100 deny ip host 192.168.10.30 host 10.10.10.10
+access-list 100 permit ip any any
+อธิบาย
+| Command           | Meaning            |
+| ----------------- | ------------------ |
+| deny ip           | block ทุก protocol  |
+| host source       | HR-PC              |
+| host destination  | SERVER             |
+| permit ip any any | allow ที่เหลือ        |
+
+>> STEP 5 — Apply ACL
+Rule ของ Extended ACL วางใกล้ Source ดังนั้น apply ที่ > G0/0 in
+Config
+interface g0/0
+ip access-group 100 in
+
+Flow จริง
+HR-PC
+ ↓
+เข้า G0/0
+ ↓
+ACL CHECK
+ ↓
+BLOCK
+
+>> STEP 6 — Testing
+HR-PC
+ping 10.10.10.10 ผล ❌ ไม่ผ่าน
+IT-PC
+ping 10.10.10.10 ผล ✅ ผ่าน
+
+>> STEP 7 — Verify ACL
+show access-lists ควรเห็น > deny ip host 192.168.10.30 host 10.10.10.10
+
+
+
+
+
+
+
+
+

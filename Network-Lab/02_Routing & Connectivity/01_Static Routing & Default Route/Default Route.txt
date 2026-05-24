@@ -1,0 +1,81 @@
+Default Route
+Default Route คืออะไร
+พูดง่ายๆ "ถ้าไม่รู้จะไปไหน ส่งไปทางนี้" ทางออกหลักของเมือง
+
+Topology
+
+PC1 --- SW1 --- R1 ===== R2 --- INTERNET
+
+R1 >> เป็น Branch Router
+R2 >> เป็น ISP / Internet Router
+
+IP Plan
+LAN
+192.168.10.0/24
+WAN
+10.0.0.0/30
+INTERNET Side
+200.1.1.0/24
+
+Assign IP
+R1
+| Interface | IP           |
+| --------- | ------------ |
+| G0/0      | 192.168.10.1 |
+| G0/1      | 10.0.0.1     |
+
+R2
+| Interface | IP        |
+| --------- | --------- |
+| G0/0      | 10.0.0.2  |
+| G0/1      | 200.1.1.1 |
+
+PC1
+IP: 192.168.10.10
+GW: 192.168.10.1
+
+>> STEP 1 — Config R1
+conf t
+
+interface g0/0
+ip address 192.168.10.1 255.255.255.0
+no shutdown
+
+interface g0/1
+ip address 10.0.0.1 255.255.255.252
+no shutdown
+
+>> STEP 2 — Config R2
+conf t
+
+interface g0/0
+ip address 10.0.0.2 255.255.255.252
+no shutdown
+
+interface g0/1
+ip address 200.1.1.1 255.255.255.0
+no shutdown
+
+>> STEP 3 — ใส่ Default Route บน R1
+ip route 0.0.0.0 0.0.0.0 10.0.0.2
+แปลว่า > ถ้าไม่รู้เส้นทาง ส่งไป 10.0.0.2
+
+>> STEP 4 — ใส่ Route กลับบน R2
+ip route 192.168.10.0 255.255.255.0 10.0.0.1
+ทำไมต้องมี Route กลับ > เพราะ Packet ต้องไป-กลับได้
+
+>> STEP 5 — Test
+จาก R1 และ PC1
+ping 200.1.1.1
+
+คำสั่งสำคัญ
+show ip route > สิ่งที่ควรเห็น S* 0.0.0.0/0 via 10.0.0.2
+| Symbol | Meaning           |
+| ------ | ----------------- |
+| S      | Static            |
+| *      | Candidate Default |
+
+
+
+
+

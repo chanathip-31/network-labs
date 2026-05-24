@@ -1,0 +1,109 @@
+PAT Overload
+✅ PC ออก Internet ได้
+✅ ใช้ Private IP ภายใน
+✅ ISP ไม่รู้จัก Private Network
+✅ ต้องใช้ PAT Overload เท่านั้นถึงออกได้
+
+Topology
+
+                    INTERNET
+                     8.8.8.8
+
+                        |
+                        |
+                  G0/0  ISP-R1
+                   8.8.8.1/24
+                        |
+                        |
+                  G0/1  ISP-R1
+                 100.100.100.1/30
+                        |
+================== WAN LINK ==================
+                        |
+                 100.100.100.2/30
+                  G0/1  HQ-R1
+                        |
+                        |
+                  G0/0  HQ-R1
+                  192.168.1.1/24
+                        |
+                    +--------+
+                    |  SW1   |
+                    +--------+
+                     |     |
+                     |     |
+             192.168.1.10  192.168.1.20
+                  PC1           PC2
+				  
+>> STEP 1 — Configure HQ Router
+enable
+conf t
+interface g0/0
+ip address 192.168.1.1 255.255.255.0
+ip nat inside
+no shutdown
+interface g0/1
+ip address 100.100.100.2 255.255.255.252
+ip nat outside
+no shutdown
+
+>> STEP 2 — Configure ISP Router
+enable
+conf t
+interface g0/0
+ip address 8.8.8.1 255.255.255.0
+no shutdown
+interface g0/1
+ip address 100.100.100.1 255.255.255.252
+no shutdown
+
+>> STEP 3 — Configure PCs
+PC1
+IP: 192.168.1.10
+MASK: 255.255.255.0
+GW: 192.168.1.1
+PC1
+IP: 192.168.1.20
+MASK: 255.255.255.0
+GW: 192.168.1.1
+
+>> STEP 4 — Configure Internet Server
+IP: 8.8.8.8
+MASK: 255.255.255.0
+GW: 8.8.8.1
+
+>> STEP 5 — Add Default Route
+บน HQ-R1
+ip route 0.0.0.0 0.0.0.0 100.100.100.1
+
+STEP 6 — TEST ก่อนทำ NAT
+จาก PC1 และ PC2
+ping 8.8.8.8 > ควร ❌ Request Timed Out เพราะ ISP ไม่รู้จัก วง 192.168.1.0/24
+
+>> STEP 7 — Create NAT ACL
+access-list 1 permit 192.168.1.0 0.0.0.255
+ACL นี้บอกว่า ใครจะถูก NAT
+
+>> STEP 8 — Configure PAT Overload
+ip nat inside source list 1 interface g0/1 overload
+
+แปลความหมาย
+| Command        | Meaning                     |
+| -------------- | --------------------------- |
+| inside source  | แปล private IP              |
+| list 1         | ใช้ ACL 1                    |
+| interface g0/1 | ใช้ public IP ของ interface  |
+| overload       | PAT                        
+
+>> STEP 9 — TEST อีกครั้ง
+จาก PC1 และ PC2
+ping 8.8.8.8 > คราวนี้ควรผ่าน ✅
+
+>> STEP 10 — Verify NAT
+บน HQ-R1
+show ip nat translations
+จะเห็นประมาณนี้
+192.168.1.10 → 100.100.100.2:xxxx
+192.168.1.20 → 100.100.100.2:yyyy
+
+

@@ -1,0 +1,89 @@
+Router-on-a-Stick (ROAS)
+
+| VLAN | Network         |
+| ---- | --------------- |
+| 10   | 192.168.10.0/24 |
+| 20   | 192.168.20.0/24 |
+
+PC VLAN10 จะคุย VLAN20 ยังไง ?
+Switch L2 ทำเองไม่ได้
+วิธีแก้ ใช้ Router มาทำ Routing
+
+ใช้ Trunk + Subinterface
+หลักการ Switch จะส่งหลาย VLAN ผ่านสายเดียว 
+
+Topology
+PC1 ---- SW1 ---- R1 ---- SW1 ---- PC2
+
+| VLAN | Name | Network         |
+| ---- | ---- | --------------- |
+| 10   | HR   | 192.168.10.0/24 |
+| 20   | IT   | 192.168.20.0/24 |
+
+>> STEP 1 — สร้าง VLAN
+SW1
+conf t
+
+vlan 10
+name HR
+
+vlan 20
+name IT
+
+STEP 2 — Assign Port
+PC1 → VLAN10
+interface fa0/1
+switchport mode access
+switchport access vlan 10
+PC2 → VLAN20
+interface fa0/2
+switchport mode access
+switchport access vlan 20
+
+STEP 3 — ตั้ง Trunk ไป Router
+interface fa0/24
+switchport mode trunk
+
+ทำไมต้อง Trunk
+พราะสายเส้นเดียวต้องส่ง:
+VLAN10
+VLAN20
+พร้อมกัน
+
+STEP 4 — Config Router
+เปิด Interface จริง
+conf t
+
+interface g0/0
+no shutdown
+
+STEP 5 — สร้าง Subinterface
+VLAN10
+interface g0/0.10
+encapsulation dot1Q 10
+ip address 192.168.10.1 255.255.255.0
+VLAN20
+interface g0/0.20
+encapsulation dot1Q 20
+ip address 192.168.20.1 255.255.255.0
+
+STEP 6 — ตั้ง IP PC
+PC1
+IP: 192.168.10.10
+Mask: 255.255.255.0
+GW: 192.168.10.1
+PC2
+IP: 192.168.20.10
+Mask: 255.255.255.0
+GW: 192.168.20.1
+
+STEP 7 — Test
+ping 192.168.20.10
+
+อธิบายสำคัญมาก
+g0/0.10 คืออะไร
+Subinterface > Virtual Interface สำหรับ VLAN10
+encapsulation dot1Q 10 > Interface นี้รับ VLAN10
+VLAN 20 ก็เหมือนกัน
+
+
