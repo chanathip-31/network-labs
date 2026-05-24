@@ -66,4 +66,4 @@ Covers enterprise switching, routing, security, wireless, and virtualization inf
 ## About
 Self-study lab portfolio by Chanathip Artwichian  
 IT Support Technician | Aspiring Network Engineer  
-📧 chanathip.artwichian@email.com
+📧 chanathip.artwichian@gmail.com
