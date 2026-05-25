@@ -1,4 +1,4 @@
-# Network Engineering Lab Portfolio
+# Network Engineering Lab 
 
 Personal network engineering lab collection built with Cisco Packet Tracer and Proxmox.  
 Covers enterprise switching, routing, security, wireless, and virtualization infrastructure.
